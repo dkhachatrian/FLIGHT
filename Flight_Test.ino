@@ -4,23 +4,44 @@
 #include <WiFiUdp.h>
 #include <SPI.h>
 
+// won't compile ...
+/*
+collect2.exe: error: ld returned 1 exit status
+
+exit status 1
+Error compiling for board Adafruit Feather M0 (Native USB Port).
+*/
+// look into fixes:
+// https://forums.adafruit.com/viewtopic.php?f=53&t=88050
+// https://forum.qt.io/topic/35492/collect2-exe-1-error-error-ld-returned-1-exit-status-solved/3
+//
+// seems to be some funky linker problem? will see if problem also occurs on other platform
+
+
+//#define Serial SerialUSB //hotfix for bugginess in 'Adafruit SAMD Boards' manager?
+
 
 // input pin definitions/macros
 
-#DEFINE RESOLUTION_ADC 12 //12-bit ADC
+#define RESOLUTION_ADC 12 //12-bit ADC
 
-#DEFINE PIN_THERMISTOR 1
-#DEFINE PIN_ECG_L 10
-#DEFINE PIN_ECG_R 11
-#DEFINE PIN_PULSEOX 15
-#DEFINE PIN_PULSEOX_SWITCH 16 //if on(high voltage), UV range; else, blue (???)
-#DEFINE LED_BUILTIN 13 //is a red LED
+#define PIN_THERMISTOR 1
+#define PIN_ECG_L 10
+#define PIN_ECG_R 11
+#define PIN_PULSEOX 15
+#define PIN_PULSEOX_RED_SWITCH 16 //if on(high voltage), red range; else, IR (???)
+#define LED_BUILTIN 13 //is a red LED
 
 
 const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
 
 //number of milliseconds to collect "continuous" data at a time
-const time_t TIME_CONTINUOUS_ACQUISITION = 1000;
+const time_t TIME_ECG = 1000;
+//number of milliseconds to wait between check pulse ox data
+//assuming max heart rate of ~200 bpm =~ 3 Hz, doubling frequency and then some to go to 8 Hz (to avoid aliasing),
+//and reciprocating gives a time interval of 1/8 s ~ 125 ms
+const time_t TIME_PO = 125;
+const short LENGTH_PO = short (2 * TIME_ECG/TIME_PO); //'2' because two values needed each reading (red and IR(???))
 
 
 WiFiUDP Udp;
@@ -31,6 +52,16 @@ const unsigned MAX_LENGTH = 32000; //max packet size is 32 kb
 const unsigned BAUD_RATE = 9600; //bits-per-second
 
 // unsigned int localPort = 2390;      // local port to listen on
+
+
+//declare buffers/arrays to pass into functions
+char str_buf[MAX_LENGTH];
+const short ECG_BUF_LEN = short(MAX_LENGTH/sizeof(short));
+short vals_ecg[ECG_BUF_LEN]; //
+short vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
+short val_temp;
+
+
 
 
 
@@ -61,11 +92,7 @@ void setup()
 
 	// setup_WiFi()
 
-  //initialize buffers/arrays to pass into functions
-  char str_buf[];
-  short vals_ecg[];
-  short vals_po[];
-  short val_temp;
+
   
 
 
@@ -78,7 +105,11 @@ void loop()
 	// prepare packet
 
   //timestamp for start of loop
-  time_t t = now();
+
+  short len_ecg = 0;
+  short len_po = 0;
+  
+  time_t t = millis();
 
 	// for each sensor (connected via analog pins???? digital pins????)
 		// collect data
@@ -87,10 +118,11 @@ void loop()
     
   update_temp(&val_temp);
 
-  update_continuous_readings(vals_ecg, vals_po, TIME_CONTINUOUS_ACQUISITION);
+  update_continuous_readings(&len_ecg, &len_po);
   
-  //update_ecg(vals_ecg);
-  //update_po(vals_po);
+  // package_data_into_sendable_string()
+
+  // encrypt string(?)
 
 	// if still connected to WiFi
 		//send_data()
@@ -119,9 +151,63 @@ void update_temp(short *val_temp) {
   return;
 }
 
-// ping the ECG pins and pulse-ox pins alternately for
-void update_continuous_readings(short vals_ecg[], short vals_po[]);
+// ping the ECG pins and pulse-ox pins alternately for ECG and pulse-ox measurements
+// replaces arguments with length of arrays at the end of the function call
+void update_continuous_readings(short* len_ecg, short* len_po){
 
+  short i = 0; //ecg counter
+  short j = 0; //po counter
+  short j_max = LENGTH_PO;
+  time_t t = millis();
+
+
+
+  // polling time elapsed with millis() will slow down acquisition ...
+  // TODO: test how fast hardware can be polled? Then can use i to determine when to switch
+
+  while(j < j_max) // stop after filling up pulse_ox array
+  {
+    
+    while(((millis() - t) < TIME_PO) && (i < ECG_BUF_LEN)){
+      // populate ECG in between pulse_ox readings
+      // store difference of V_right and V_left
+      vals_ecg[i] = analogRead(PIN_ECG_R) - analogRead(PIN_ECG_L);
+      i++;
+    }
+    // if here, either time elapsed or reached end of buffer
+    // return if end of buffer
+    if(i >= ECG_BUF_LEN) { break; }
+
+    //otherwise, add to pulse_ox reading array
+    add_pulse_ox_data(j);
+    j+=2; //'2' because two readings added to pulse-ox (see documentation for add_pulse_ox_data
+    // update interval
+    t = millis();
+    
+
+    
+  }
+
+  // update lengths
+  *len_ecg = i;
+  *len_po = j;
+
+  return;
+}
+
+
+// Polls for voltage readings corresponding to absorbances for red and IR
+// will add in the order red then IR
+// will have the PIN_PULSEOX_RED_SWITCH to LOW (pulseox LED set to IR (lower power))
+// on function return
+// updating of length is handled by caller -- len_po_cur is just used to find slots
+// to place read values
+void add_pulse_ox_data(short len_po_cur){
+  digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
+  vals_po[len_po_cur] = analogRead(PIN_PULSEOX);
+  digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
+  vals_po[len_po_cur + 1] = analogRead(PIN_PULSEOX);
+}
 
 
 // Waits until a serial connection is established (via native USB port)
