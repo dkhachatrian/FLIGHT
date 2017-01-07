@@ -4,11 +4,30 @@
 #include <WiFiUdp.h>
 #include <SPI.h>
 
+
+// input pin definitions/macros
+
+#DEFINE RESOLUTION_ADC 12 //12-bit ADC
+
+#DEFINE PIN_THERMISTOR 1
+#DEFINE PIN_ECG_L 10
+#DEFINE PIN_ECG_R 11
+#DEFINE PIN_PULSEOX 15
+#DEFINE PIN_PULSEOX_SWITCH 16 //if on(high voltage), UV range; else, blue (???)
+#DEFINE LED_BUILTIN 13 //is a red LED
+
+
+const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
+
+//number of milliseconds to collect "continuous" data at a time
+const time_t TIME_CONTINUOUS_ACQUISITION = 1000;
+
+
 WiFiUDP Udp;
 
 unsigned wifi_status = WL_IDLE_STATUS;
 
-const unsigned MAX_LENGTH = 255;
+const unsigned MAX_LENGTH = 32000; //max packet size is 32 kb
 const unsigned BAUD_RATE = 9600; //bits-per-second
 
 // unsigned int localPort = 2390;      // local port to listen on
@@ -28,17 +47,26 @@ enum LED
 };
 
 
-const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
+
 
 
 void setup()
 {
+  //use all bits of ADC (not default of 10)
+  analogReadResolution(RESOLUTION_ADC);
+  
 	//Configure pins for Adafruit ATWINC1500 Feather
 	WiFi.setPins(8, 7, 4, 2);
 	setup_WiFi();
 
 	// setup_WiFi()
 
+  //initialize buffers/arrays to pass into functions
+  char str_buf[];
+  short vals_ecg[];
+  short vals_po[];
+  short val_temp;
+  
 
 
 }
@@ -49,12 +77,20 @@ void loop()
 
 	// prepare packet
 
+  //timestamp for start of loop
+  time_t t = now();
+
 	// for each sensor (connected via analog pins???? digital pins????)
 		// collect data
 		// add to string
 		// store string in array, delimited by DELIMITER
-	
-	
+    
+  update_temp(&val_temp);
+
+  update_continuous_readings(vals_ecg, vals_po, TIME_CONTINUOUS_ACQUISITION);
+  
+  //update_ecg(vals_ecg);
+  //update_po(vals_po);
 
 	// if still connected to WiFi
 		//send_data()
@@ -73,6 +109,20 @@ void loop()
 
 	// wait a certain amount of time depending on acquisition rate (?)
 }
+
+// ping PIN_THERMISTOR to get new voltage binning for val_temp
+// Does *not* convert to temperature
+// (Temperature formula would be ???T)
+void update_temp(short *val_temp) {
+  *val_temp = analogRead(PIN_THERMISTOR);
+  // convert to temp? Would need float instead of short
+  return;
+}
+
+// ping the ECG pins and pulse-ox pins alternately for
+void update_continuous_readings(short vals_ecg[], short vals_po[]);
+
+
 
 // Waits until a serial connection is established (via native USB port)
 // then asks for WiFi network credentials and attempts to connect.
