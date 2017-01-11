@@ -48,8 +48,23 @@ const unsigned BAUD_RATE = 9600; //bits-per-second
 
 
 //declare buffers/arrays to pass into functions
-char str_buf[MAX_LENGTH];
-const short ECG_BUF_LEN = short(MAX_LENGTH/sizeof(short));
+//char str_buf[MAX_LENGTH];
+
+
+const sizeType ECG_BUF_LEN = sizeType(MAX_LENGTH/sizeof(binType));
+
+
+
+//// String Labels and Delimiters
+
+const char DELIMITER = '\t';
+const String LABEL_TIME = "TIMESTAMP:";
+const String LABEL_ECG = "ECG:";
+const String LABEL_PO = "PO:";
+const String LABEL_TEMP = "TEMP:";
+const String LABEL_END_OF_PACKET = "\n";
+
+
 
 
 
@@ -70,6 +85,28 @@ void listNetworks();
 void printEncryptionType(int thisType);
 
 void printMacAddress();
+
+
+
+
+
+
+// claas Data implementation
+
+// use struct -- keeps bytes continuous
+// (easier to chunk for encryption)
+struct Data{
+  binType vals_ecg[ECG_BUF_LEN]; //ecg bin numbers
+  binType vals_po[size_t(ECG_BUF_LEN/10)]; // polled less often than ECG circuit
+  binType val_temp; //temperature reading
+  sizeType len_ecg;
+  sizeType len_po;
+//  sizeType len_temp; // always 1
+};
+
+
+
+
 
 
 #endif

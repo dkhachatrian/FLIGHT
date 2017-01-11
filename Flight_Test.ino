@@ -1,3 +1,5 @@
+//#include <AES.h>
+
 // include headers
 
 #include "Flight_Test.h"
@@ -5,16 +7,17 @@
 
 
 
-
-WiFiUDP Udp;
+//WiFiUDP Udp;
+WiFiSSLClient client; // SSL handles encryption for us!
 
 unsigned wifi_status = WL_IDLE_STATUS;
 
 
-binType vals_ecg[ECG_BUF_LEN]; //ecg bin numbers
-binType vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
-binType val_temp; //temperature reading
+//binType vals_ecg[ECG_BUF_LEN]; //ecg bin numbers
+//binType vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
+//binType val_temp; //temperature reading
 
+Data readings;
 
 
 
@@ -52,6 +55,7 @@ void setup()
 
 }
 
+
 void loop()
 {
 	// collect_data()
@@ -60,23 +64,28 @@ void loop()
 
   //timestamp for start of loop
 
-  sizeType len_ecg = 0;
-  sizeType len_po = 0;
+  readings.len_ecg = 0;
+  readings.len_po = 0;
   
   unsigned long t = millis();
 
-	// for each sensor (connected via analog pins???? digital pins????)
-		// collect data
-		// add to string
-		// store string in array, delimited by DELIMITER
-    
-  update_temp(&val_temp);
 
-  update_continuous_readings(&len_ecg, &len_po);
+  // collect data
+  update_temp(&readings.val_temp);
+  update_continuous_readings(&readings.len_ecg, &readings.len_po);
   
   // package_data_into_sendable_string()
 
+  // package data into one string
+//  package_data_to_str();
+
+  String data_str = package_data(readings, t);
+
+
   // encrypt string(?)
+  // no need! SSL handles this for us!
+
+// 
 
 	// if still connected to WiFi
 		//send_data()
@@ -96,6 +105,44 @@ void loop()
 	// wait a certain amount of time depending on acquisition rate (?)
 }
 
+//packages the Data class into a string, timestamped at the front with t,
+// to be sent over SSL
+String package_data(Data d, time_t t){
+  String s = "";
+  int i = 0;
+
+  // "pretty" code for string formatting not trivial...
+  // (would require a bunch of extra code/function calls)
+  // so a 'dumb' way is used
+
+  s = LABEL_TIME + to_string(t) + DELIMITER + LABEL_ECG;
+
+  //s = label_1 + delimiter; ...
+
+  // churn together ecg data
+  for(i = 0; i < d.len_ecg; i++)
+  {
+    s += (to_string(d.val_ecg[i]) + DELIMITER);
+  }
+
+  s += LABEL_PO;
+
+  for(i = 0; i < d.len_po; i++)
+  {
+    s += (to_string(d.val_po[i]) + DELIMITER);
+  }
+
+  s += LABEL_TEMP + to_string(d.val_temp) + LABEL_END_OF_PACKET;
+
+  return s;
+  
+}
+
+
+
+
+
+
 // ping PIN_THERMISTOR to get new voltage binning for val_temp
 // Does *not* convert to temperature
 // (Temperature formula would be ???T)
@@ -107,7 +154,7 @@ void update_temp(binType *val_temp) {
 
 // ping the ECG pins and pulse-ox pins alternately for ECG and pulse-ox measurements
 // replaces arguments with length of arrays at the end of the function call
-void update_continuous_readings(size_t* len_ecg, size_t* len_po){
+void update_continuous_readings(sizeType* len_ecg, sizeType* len_po){
 
   ctrType i = 0; //ecg counter
   ctrType j = 0; //po counter
@@ -125,7 +172,7 @@ void update_continuous_readings(size_t* len_ecg, size_t* len_po){
     while(((millis() - t) < TIME_PO) && (i < ECG_BUF_LEN)){
       // populate ECG in between pulse_ox readings
       // store difference of V_right and V_left
-      vals_ecg[i] = analogRead(PIN_ECG_R) - analogRead(PIN_ECG_L);
+      readings.vals_ecg[i] = analogRead(PIN_ECG_R) - analogRead(PIN_ECG_L);
       i++;
     }
     // if here, either time elapsed or reached end of buffer
@@ -158,9 +205,9 @@ void update_continuous_readings(size_t* len_ecg, size_t* len_po){
 // to place read values
 void add_pulse_ox_data(sizeType len_po_cur){
   digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
-  vals_po[len_po_cur] = analogRead(PIN_PULSEOX);
+  readings.vals_po[len_po_cur] = analogRead(PIN_PULSEOX);
   digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
-  vals_po[len_po_cur + 1] = analogRead(PIN_PULSEOX);
+  readings.vals_po[len_po_cur + 1] = analogRead(PIN_PULSEOX);
 }
 
 
