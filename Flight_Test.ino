@@ -1,81 +1,35 @@
 // include headers
 
-#include <WiFi101.h> //for WiFi
-#include <WiFiUdp.h>
-#include <SPI.h>
-
-// won't compile ...
-/*
-collect2.exe: error: ld returned 1 exit status
-
-exit status 1
-Error compiling for board Adafruit Feather M0 (Native USB Port).
-*/
-// look into fixes:
-// https://forums.adafruit.com/viewtopic.php?f=53&t=88050
-// https://forum.qt.io/topic/35492/collect2-exe-1-error-error-ld-returned-1-exit-status-solved/3
-//
-// seems to be some funky linker problem? will see if problem also occurs on other platform
+#include "Flight_Test.h"
 
 
-//#define Serial SerialUSB //hotfix for bugginess in 'Adafruit SAMD Boards' manager?
 
-
-// input pin definitions/macros
-
-#define RESOLUTION_ADC 12 //12-bit ADC
-
-#define PIN_THERMISTOR 1
-#define PIN_ECG_L 10
-#define PIN_ECG_R 11
-#define PIN_PULSEOX 15
-#define PIN_PULSEOX_RED_SWITCH 16 //if on(high voltage), red range; else, IR (???)
-#define LED_BUILTIN 13 //is a red LED
-
-
-const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
-
-//number of milliseconds to collect "continuous" data at a time
-const time_t TIME_ECG = 1000;
-//number of milliseconds to wait between check pulse ox data
-//assuming max heart rate of ~200 bpm =~ 3 Hz, doubling frequency and then some to go to 8 Hz (to avoid aliasing),
-//and reciprocating gives a time interval of 1/8 s ~ 125 ms
-const time_t TIME_PO = 125;
-const short LENGTH_PO = short (2 * TIME_ECG/TIME_PO); //'2' because two values needed each reading (red and IR(???))
 
 
 WiFiUDP Udp;
 
 unsigned wifi_status = WL_IDLE_STATUS;
 
-const unsigned MAX_LENGTH = 32000; //max packet size is 32 kb
-const unsigned BAUD_RATE = 9600; //bits-per-second
 
-// unsigned int localPort = 2390;      // local port to listen on
-
-
-//declare buffers/arrays to pass into functions
-char str_buf[MAX_LENGTH];
-const short ECG_BUF_LEN = short(MAX_LENGTH/sizeof(short));
-short vals_ecg[ECG_BUF_LEN]; //
-short vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
-short val_temp;
+binType vals_ecg[ECG_BUF_LEN]; //ecg bin numbers
+binType vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
+binType val_temp; //temperature reading
 
 
 
 
 
-// sensor names
-// TODO: move declarations to a header file
-
-// will use enum, associate names with pins
-// TODO: match with proper pin numbers
-enum LED
-{
-	red = 13, //Pin #13 red LED for general purpose blinking
-	green = 1,
-	blue = 3
-};
+//// sensor names
+//// TODO: move declarations to a header file
+//
+//// will use enum, associate names with pins
+//// TODO: match with proper pin numbers
+//enum LED
+//{
+//	red = 13, //Pin #13 red LED for general purpose blinking
+//	green = 1,
+//	blue = 3
+//};
 
 
 
@@ -106,10 +60,10 @@ void loop()
 
   //timestamp for start of loop
 
-  short len_ecg = 0;
-  short len_po = 0;
+  sizeType len_ecg = 0;
+  sizeType len_po = 0;
   
-  time_t t = millis();
+  unsigned long t = millis();
 
 	// for each sensor (connected via analog pins???? digital pins????)
 		// collect data
@@ -145,7 +99,7 @@ void loop()
 // ping PIN_THERMISTOR to get new voltage binning for val_temp
 // Does *not* convert to temperature
 // (Temperature formula would be ???T)
-void update_temp(short *val_temp) {
+void update_temp(binType *val_temp) {
   *val_temp = analogRead(PIN_THERMISTOR);
   // convert to temp? Would need float instead of short
   return;
@@ -153,12 +107,12 @@ void update_temp(short *val_temp) {
 
 // ping the ECG pins and pulse-ox pins alternately for ECG and pulse-ox measurements
 // replaces arguments with length of arrays at the end of the function call
-void update_continuous_readings(short* len_ecg, short* len_po){
+void update_continuous_readings(size_t* len_ecg, size_t* len_po){
 
-  short i = 0; //ecg counter
-  short j = 0; //po counter
-  short j_max = LENGTH_PO;
-  time_t t = millis();
+  ctrType i = 0; //ecg counter
+  ctrType j = 0; //po counter
+  ctrType j_max = LENGTH_PO;
+  unsigned long t = millis();
 
 
 
@@ -202,7 +156,7 @@ void update_continuous_readings(short* len_ecg, short* len_po){
 // on function return
 // updating of length is handled by caller -- len_po_cur is just used to find slots
 // to place read values
-void add_pulse_ox_data(short len_po_cur){
+void add_pulse_ox_data(sizeType len_po_cur){
   digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
   vals_po[len_po_cur] = analogRead(PIN_PULSEOX);
   digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
