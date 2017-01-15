@@ -53,12 +53,15 @@ IPAddress subnet(255, 255, 255, 0);
 // so laptop IP changes way too often...
 // connect to google instead
 // Google's IP address for ping tests is 8.8.8.8
-char server[] = "google.com";
-int port = 80;
+char server[] = "arduino.cc";
+int port = 443; //for HTTPS
 
-
-
-
+//
+//IPAddress server(192,168,0,102);
+//int port = 777;
+//
+//IPAddress server(127,0,0,1);
+//int port = 80;
 
 
 

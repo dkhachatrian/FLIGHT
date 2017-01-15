@@ -30,7 +30,7 @@
 // if defined, tries connecting with wifi
 // otherwise, testing values through serial
 // (e.g. test packet string contents)
-// #define USING_WIFI
+#define USING_WIFI
 
 // just making sure things print as expected
 //#define BAREBONES
@@ -56,7 +56,8 @@ binType generate_num(){
 
 
 //WiFiUDP Udp;
-WiFiSSLClient client; // SSL handles encryption for us!
+//WiFiSSLClient client; // SSL handles encryption for us!
+WiFiClient client; // testing with 127.0.0.1
 
 //SimpleTimer simpleTimer; // for ECG/pulse-ox timing
 
@@ -308,9 +309,9 @@ void setup_WiFi()
   #ifndef DUMMY_SENSORS
 	char ssid[MAX_INPUT_LENGTH]; //  your network SSID (name)
 	char pass[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
-//  #else
-//  char ssid[] = "pingguo";
-//  char pass[] = ""; //redacted
+  #else
+  char ssid[] = "pingguo";
+  char pass[] = ""; //redacted
   #endif
 
 	// Print WiFi MAC address:
