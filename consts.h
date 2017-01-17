@@ -10,8 +10,13 @@
 #define PIN_THERMISTOR 1
 #define PIN_ECG_L 10
 #define PIN_ECG_R 11
-#define PIN_PULSEOX 15
-#define PIN_PULSEOX_RED_SWITCH 16 //if on(high voltage), red range; else, IR (???)
+//#define PIN_PULSEOX 15
+//#define PIN_PULSEOX_RED_SWITCH 16 //if on(high voltage), red range; else, IR (???)
+
+// we have two different LEDs connected
+#define PIN_PULSEOX_RED 15
+#define PIN_PULSEOX_IR 16
+
 #define LED_BUILTIN 13 //is a red LED
 
 

@@ -37,10 +37,6 @@ bool Data::add_ecg_data(){
 
 // Polls for voltage readings corresponding to absorbances for red and IR
 // will add in the order red then IR
-// will have the PIN_PULSEOX_RED_SWITCH to LOW (pulseox LED set to IR (lower power))
-// on function return
-// updating of length is handled by caller -- len_po_cur is just used to find slots
-// to place read values
 //
 // Returns false if there's not enough space
 bool Data::add_pulse_ox_data(){
@@ -55,12 +51,18 @@ bool Data::add_pulse_ox_data(){
   #endif
 
   
-  digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
-  vals_po[len_po] = analogRead(PIN_PULSEOX);
-  digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
-  vals_po[len_po + 1] = analogRead(PIN_PULSEOX);
-  len_po += 2;
-  return true;
+//  digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
+//  vals_po[len_po] = analogRead(PIN_PULSEOX);
+//  digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
+//  vals_po[len_po + 1] = analogRead(PIN_PULSEOX);
+//  len_po += 2;
+//  return true;
+
+  // poll the two different pins in the order 'RED' and 'IR'
+  vals_po[len_po] = analogRead(PIN_PULSEOX_RED);
+  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_IR);
+  vals_po += 2;
+
 }
 
 
