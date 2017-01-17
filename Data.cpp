@@ -37,7 +37,8 @@ bool Data::add_ecg_data(){
 
 // Polls for voltage readings corresponding to absorbances for red and IR
 // will add in the order red then IR
-//
+// Will leave pins 
+// Will leave 
 // Returns false if there's not enough space
 bool Data::add_pulse_ox_data(){
 
@@ -50,18 +51,39 @@ bool Data::add_pulse_ox_data(){
   return true;
   #endif
 
+  // poll for red
+  digitalWrite(PIN_PULSEOX_LED_RED, HIGH); //only red LED is on
+  //delay(1); //necessary?
+  vals_po[len_po] = analogRead(PIN_PULSEOX_PHOTODIODE);
+
+  // poll for IR
+  digitalWrite(PIN_PULSEOX_LED_RED, LOW);
+  digitalWrite(PIN_PULSEOX_LED_IR, HIGH); // now only IR LED is on
+  //delay(1); //necessary?
+  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_PHOTODIODE);
+
+  // cleanup
+  digitalWrite(PIN_PULSEOX_LED_IR, LOW); //turn off LEDs
+  len_po += 2; //update length of array
+  return true;
+
   
+
+//  // poll the two different pins in the order 'RED' and 'IR'
+//  vals_po[len_po] = analogRead(PIN_PULSEOX_RED);
+//  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_IR);
+//  vals_po += 2;
+//
+//  
 //  digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
 //  vals_po[len_po] = analogRead(PIN_PULSEOX);
 //  digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
 //  vals_po[len_po + 1] = analogRead(PIN_PULSEOX);
 //  len_po += 2;
 //  return true;
+//
 
-  // poll the two different pins in the order 'RED' and 'IR'
-  vals_po[len_po] = analogRead(PIN_PULSEOX_RED);
-  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_IR);
-  vals_po += 2;
+
 
 }
 
