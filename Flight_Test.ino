@@ -1,3 +1,38 @@
+// toggles (mainly for tests)
+
+
+
+// leave uncommented to have microcontroller directly calculate
+// relevant physiological data from the voltage readings
+// (instead of having a separate recipient do this)
+//
+// For debugging only (performing this on the microcontroller
+// will slow things down)
+#define PERFORM_CALCULATIONS
+
+
+
+
+// if defined, generates numbers as fake sensor voltage readings
+// and uses built-in values for ssid and pass to
+// quickly connect to wifi
+#define DUMMY_SENSORS
+
+// if defined, tries connecting with wifi
+// otherwise, testing values through serial
+// (e.g. test packet string contents)
+//#define USING_WIFI
+
+// just making sure things print as expected
+//#define BAREBONES
+
+
+
+
+
+
+
+
 
 
 
@@ -20,20 +55,6 @@
 //#include <Event.h>
 //#include <Timer.h> // from http://playground.arduino.cc/Code/Timer
 
-// toggles (mainly for tests)
-
-// if defined, generates numbers as fake sensor voltage readings
-// and uses built-in values for ssid and pass to
-// quickly connect to wifi
-#define DUMMY_SENSORS 
-
-// if defined, tries connecting with wifi
-// otherwise, testing values through serial
-// (e.g. test packet string contents)
-#define USING_WIFI
-
-// just making sure things print as expected
-//#define BAREBONES
 
 
 #ifdef DUMMY_SENSORS
@@ -43,14 +64,15 @@ binType x = 0;
 // generates numbers linearly mod 4096
 binType generate_num(){
   binType result = x;
+  #ifdef PERFORM_CALCULATIONS
+  x = (x+1);
+  #else
   x = (x+1)%4096;
+  #endif
   return result;
 }
 
 #endif
-
-
-
 
 
 
@@ -151,15 +173,45 @@ void loop()
 //  package_data_to_str();
 
   String data_str = readings.package_data(t);
-
+  char buf[1000];
+  data_str.toCharArray(buf, 1000);
 
   #ifdef USING_WIFI
-  // if still connected to WiFi
-  if(wifi_status == WL_CONNECTED && client.connected()){
+
+  Serial.println(data_str);
+  
+  // close any connection before send a new request.
+  // This will free the socket on the WiFi shield
+  client.stop();
+
+  
+  // if there's a successful connection:
+  if (client.connect(server, port)) {
+//  // if still connected to WiFi
+//  if(wifi_status == WL_CONNECTED && client.connected()){
     // send data
+    // (ideally will be slower...)
+//    int str_len = data_str.length();
+//    for(int i = 0; i < str_len; i++){
+//      client.write(data_str[i]);
+//    }
+    Serial.println("Connected to server! Printing buf...");
+    client.println("Hi there!");
     client.println(data_str);
+//    client.println(buf);
+//    Serial.println(buf);
+//    for(int i = 0; i < 5; i++){
+//      client.println(String(i));
+//      client.println(buf);
+//    }
+  }
+  else {
+    Serial.println("Didn't connect to server...");
   }
 
+//  client.stop();
+//  delay(5000);
+//  client.stop();
 
 		//send_data()
 
@@ -310,8 +362,9 @@ void setup_WiFi()
 	char ssid[MAX_INPUT_LENGTH]; //  your network SSID (name)
 	char pass[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
   #else
-  char ssid[] = "pingguo";
-  char pass[] = ""; //redacted
+  // test network, set up by other microcontroller
+  char ssid[] = "wifi101-network";
+  char pass[] = "1234567890";
   #endif
 
 	// Print WiFi MAC address:
@@ -335,9 +388,12 @@ void setup_WiFi()
 		Serial.readBytesUntil('\n', pass, MAX_LENGTH);
     #endif
 
+
 		// attempt connection
 
-		wifi_status = WiFi.begin(ssid, pass);
+//		wifi_status = WiFi.begin(ssid, pass); //for encrypted networks 
+    wifi_status = WiFi.begin(ssid); //for non-encrypted networks
+    delay(10000); //give time to connect (necessary?)
 
 		// tell user if it couldn't connect
 		if (wifi_status != WL_CONNECTED)
@@ -355,21 +411,21 @@ void setup_WiFi()
 
 	// tell user to unplug from computer, set up on patient
 	// 
-
-  Serial.println("Attempting to connect to server on port " +String(port) + " ...");
-
-  int i = 0;
-
-  while(!client.connected() && i < 10)
-  {
-    client.connect(server, port);
-    i +=1;
-  }
-
-  if(!client.connected())
-    Serial.println("Connecting to server failed...");
-   else
-    Serial.println("Connection to server succeeded!");
+//
+//  Serial.println("Attempting to connect to server on port " +String(port) + " ...");
+//
+//  int i = 0;
+//
+//  while(!client.connected() && i < 10)
+//  {
+//    client.connect(server, port);
+//    i +=1;
+//  }
+//
+//  if(!client.connected())
+//    Serial.println("Connecting to server failed...");
+//   else
+//    Serial.println("Connection to server succeeded!");
 
 }
 

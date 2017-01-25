@@ -3,7 +3,11 @@
 
 // typedefs //
 
+#ifdef PERFORM_CALCULATIONS
+typedef float binType;
+#else
 typedef int binType;
+#endif
 
 typedef int ctrType;
 

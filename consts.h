@@ -7,16 +7,17 @@
 
 #define RESOLUTION_ADC 12 //12-bit ADC
 
-#define PIN_THERMISTOR 1
-#define PIN_ECG_L 10
-#define PIN_ECG_R 11
+#define PIN_THERMISTOR A0
+//#define PIN_ECG_L 10
+//#define PIN_ECG_R 11
+#define PIN_ECG A3
 //#define PIN_PULSEOX 15
 //#define PIN_PULSEOX_RED_SWITCH 16 //if on(high voltage), red range; else, IR (???)
 
 // we have two different LEDs connected for pulse-ox
-#define PIN_PULSEOX_LED_RED 15
-#define PIN_PULSEOX_LED_IR 16
-#define PIN_PULSEOX_PHOTODIODE 17 //will be read to receive voltages
+#define PIN_PULSEOX_LED_RED 13
+#define PIN_PULSEOX_LED_IR 12
+#define PIN_PULSEOX_PHOTODIODE A2 //will be read to receive voltages
 
 #define LED_BUILTIN 13 //is a red LED
 
@@ -26,7 +27,10 @@
 
 //max packet size that website can receive is 32 kB
 // we only have so much RAM, will make larger array size 5k (if 4-bit ints --> 20 kiB)
-const unsigned MAX_LENGTH = 5000; 
+//
+// NEW: to match with Integrated Circuit division, will collect 250 samples / second
+// --> 1000 / sizeof(int) = 250 points every TIME_CTS ms.
+const unsigned MAX_LENGTH = 1000; 
 
 
 const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
@@ -67,12 +71,24 @@ const unsigned BAUD_RATE = 9600; //bits-per-second
 
 //// String Labels and Delimiters
 
-const char DELIMITER = '\t';
+const char DELIMITER = ',';
 const String LABEL_TIME = "TIMESTAMP:";
 const String LABEL_ECG = "ECG:";
 const String LABEL_PO = "PO:";
 const String LABEL_TEMP = "TEMP:";
-const String LABEL_END_OF_PACKET = "\n";
+const String LABEL_END_OF_PACKET = "";
+
+
+
+
+//// For #PERFORM_CALCULATIONS formulae
+
+const float V_IN = 3.3;
+const int N_BINS = pow(2,RESOLUTION_ADC);
+//const float PO_COEFFS[] = {110.99, -43.724, 7.8091, -1.364, 0.2143, -0.0247, 0.0014}; // for order 6
+// for order 2 polynomial interpolation. For ratios between A_red/A_IR
+const float PO_COEFFS[] = {108.29, -36.474, 2.8541}; 
+
 
 
 

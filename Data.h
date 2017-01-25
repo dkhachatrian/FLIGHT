@@ -1,6 +1,20 @@
 #ifndef DATA_PACKET
 #define DATA_PACKET
 
+
+// leave uncommented to have microcontroller directly calculate
+// relevant physiological data from the voltage readings
+// (instead of having a separate recipient do this)
+//
+// For debugging only (performing this on the microcontroller
+// will slow things down)
+#define PERFORM_CALCULATIONS
+
+
+
+
+
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
 #else

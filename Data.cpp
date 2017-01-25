@@ -23,11 +23,20 @@ bool Data::add_ecg_data(){
   }
 
   #ifdef DUMMY_SENSORS
-  vals_ecg[len_ecg] = generate_num();
+    vals_ecg[len_ecg] = generate_num();
   #else
   // populate ECG in between pulse_ox readings
   // store difference of V_right and V_left
-  vals_ecg[len_ecg] = analogRead(PIN_ECG_R) - analogRead(PIN_ECG_L);
+//  vals_ecg[len_ecg] = analogRead(PIN_ECG_R) - analogRead(PIN_ECG_L);
+    #ifndef PERFORM_CALCULATIONS
+    
+    vals_ecg[len_ecg] = analogRead(PIN_ECG);
+    
+    #else
+    // no processing done currently
+    vals_ecg[len_ecg] = analogRead(PIN_ECG);
+    #endif
+  
   #endif
   len_ecg+=1;
   return true;
@@ -37,8 +46,8 @@ bool Data::add_ecg_data(){
 
 // Polls for voltage readings corresponding to absorbances for red and IR
 // will add in the order red then IR
-// Will leave pins 
-// Will leave 
+// Will leave pins off at the end
+//
 // Returns false if there's not enough space
 bool Data::add_pulse_ox_data(){
 
@@ -54,16 +63,36 @@ bool Data::add_pulse_ox_data(){
   // poll for red
   digitalWrite(PIN_PULSEOX_LED_RED, HIGH); //only red LED is on
   //delay(1); //necessary?
-  vals_po[len_po] = analogRead(PIN_PULSEOX_PHOTODIODE);
+  #ifndef PERFORM_CALCULATIONS
+    vals_po[len_po] = analogRead(PIN_PULSEOX_PHOTODIODE);
+  #else
+    float v_red = analogRead(PIN_PULSEOX_PHOTODIODE);
+  #endif
 
   // poll for IR
   digitalWrite(PIN_PULSEOX_LED_RED, LOW);
   digitalWrite(PIN_PULSEOX_LED_IR, HIGH); // now only IR LED is on
   //delay(1); //necessary?
-  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_PHOTODIODE);
-
+  #ifndef PERFORM_CALCULATIONS
+    vals_po[len_po + 1] = analogRead(PIN_PULSEOX_PHOTODIODE);
+  #else
+    float v_ir = analogRead(PIN_PULSEOX_PHOTODIODE);
+  #endif
+  
   // cleanup
   digitalWrite(PIN_PULSEOX_LED_IR, LOW); //turn off LEDs
+
+  #ifdef PERFORM_CALCULATIONS
+  float ratio = v_red / v_ir;
+  float percentO2 = 0;
+  for(int i = 0; i < 3; i++)
+    percentO2 += (PO_COEFFS[i] * pow(ratio, i));
+
+  vals_po[len_po] = percentO2;
+  vals_po[len_po+1] = v_ir; //just to see how low the numbers are
+  Serial.println(String(percentO2));
+  #endif
+  
   len_po += 2; //update length of array
   return true;
 
@@ -98,9 +127,22 @@ void Data::update_temp() {
   return;
   #endif
 
-
+  #ifndef PERFORM_CALCULATIONS
+    val_temp = analogRead(PIN_THERMISTOR);
+  #else
+    // what follows is some magic code adapted from an online source
+    // by the Integrated Circuit division, in order to convert
+    // voltage binning to temperature
+    //
+    // TODO: parse to understand...
+     binType Temp;
+     Temp = log(((204750000/analogRead(PIN_THERMISTOR)) - 50000));
+     Temp = 1 / (0.0003709216250 + (0.0002769715465 + (-0.00000001079695539 * Temp * Temp ))* Temp );
+     Temp = Temp - 273.15;              // Convert Kelvin to Celsius
+  // Temp = (Temp * 9.0)/ 5.0 + 32.0; // Celsius to Fahrenheit - comment out this line if you need Celsius
+     val_temp = Temp;
+  #endif
   
-  val_temp = analogRead(PIN_THERMISTOR);
   // convert to temp? Would need float instead of short
   return;
 }
