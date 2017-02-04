@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 // toggles (mainly for tests)
 
 
@@ -21,13 +23,15 @@
 // if defined, tries connecting with wifi
 // otherwise, testing values through serial
 // (e.g. test packet string contents)
-//#define USING_WIFI
+#define USING_WIFI
 
 // just making sure things print as expected
 //#define BAREBONES
 
 
-
+// seems like we're using Firebase as our server now?
+// so have that toggle for now
+#define USING_FIREBASE
 
 
 
@@ -88,26 +92,10 @@ Data readings;
 
 unsigned wifi_status = WL_IDLE_STATUS;
 
-
-//binType vals_ecg[LENGTH_ECG]; //ecg bin numbers
-//binType vals_po[size_t(MAX_LENGTH/10)]; // polled less often than ECG circuit
-//binType val_temp; //temperature reading
-
-
-
-//// sensor names
-//// TODO: move declarations to a header file
-//
-//// will use enum, associate names with pins
-//// TODO: match with proper pin numbers
-//enum LED
-//{
-//	red = 13, //Pin #13 red LED for general purpose blinking
-//	green = 1,
-//	blue = 3
-//};
-
-
+//IPAddress server(192,168,1,1);
+char server[MAX_INPUT_LENGTH];
+String auth_code;
+int port;
 
 
 
@@ -128,7 +116,81 @@ void setup()
 	WiFi.setPins(8, 7, 4, 2);
 	setup_WiFi();
   #endif
+  setup_server();
 
+}
+
+
+// get info for server to connect to
+void setup_server()
+{
+  
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  //get server info
+
+  #ifndef DUMMY_SENSORS
+  char server[MAX_INPUT_LENGTH]; //  your network SSID (name)
+  char auth_code[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
+  char port_str[10];
+  port = 0;
+  #else
+  // test network, set up by other microcontroller
+  char server[] = "flight-time-525c8.firebaseio.com"; //  your network SSID (name)
+  char auth_code[] = ""; // your network password (use for WPA, or use as key for WEP)
+  int port = 443;
+  #endif
+
+
+
+  while (true)
+  {
+    #ifndef DUMMY_SENSORS
+
+    // get server name
+    Serial.print("Please provide the name of the server to connect to, then press Enter or Return:\n");
+    Serial.readBytesUntil('\n', server, MAX_INPUT_LENGTH);
+    // get auth code
+    Serial.print("Please input the authorization code to talk to the server, then press Enter.\n"
+    Serial.print("(Note: will not be able to test authorization code until readings are being sent, so input carefully):\n");
+    Serial.readBytesUntil('\n', auth_code, MAX_INPUT_LENGTH);
+    // get port number
+    while(port == 0)
+    {
+      Serial.print("Please input the port the server will be listening on, then press Enter");
+      Serial.print(" (hint: standard HTTP port is 80 and standard HTTPS port is 443":\n");
+      Serial.readBytesUntil('\n', port_str, MAX_INPUT_LENGTH);
+      port = atoi(port_str); //if atoi fails, returns 0
+    }
+
+    #endif
+
+
+    // attempt connection
+
+    Serial.println("Attempting to connect to server " + String(server)+ " on port " +String(port) + " ...");
+    int i = 0;
+  
+    while(!client.connected() && i < 3)
+    {
+      client.connect(server, port);
+      i +=1;
+    }
+  
+    if(!client.connected())
+    {
+      Serial.println("Connecting to server failed...");
+    }
+     else if (client.connected())
+     {
+      // we're good!
+      // get out of loop
+      Serial.println("Connection to server succeeded!");
+      break;
+     }
+  }
 }
 
 
@@ -138,8 +200,6 @@ void loop()
   Serial.println("Hi I'm in loop");
   #else
   
-	// collect_data()
-
 	// prepare packet
 
   //timestamp for start of loop
@@ -152,29 +212,13 @@ void loop()
   Serial.println("Before update_continuous_readings");
   update_continuous_readings(TIME_CTS);
 
-//  Serial.println("Before simpleTimer.run()...");
-//
-//  simpleTimer.run();
-
   // wait until simpleTimers are finished before running
   // technically, with these simpleTimers set up, can do other work
   // in the meantime
   // TODO: utilize dead time here...
 
 
-//  while(simpleTimer.getNumTimers() != 0) {
-//    Serial.println("In simpleTimer loop");
-//    }
-
-  
-  // package_data_into_sendable_string()
-
-  // package data into one string
-//  package_data_to_str();
-
   String data_str = readings.package_data(t);
-  char buf[1000];
-  data_str.toCharArray(buf, 1000);
 
   #ifdef USING_WIFI
 
@@ -187,47 +231,12 @@ void loop()
   
   // if there's a successful connection:
   if (client.connect(server, port)) {
-//  // if still connected to WiFi
-//  if(wifi_status == WL_CONNECTED && client.connected()){
-    // send data
-    // (ideally will be slower...)
-//    int str_len = data_str.length();
-//    for(int i = 0; i < str_len; i++){
-//      client.write(data_str[i]);
-//    }
-    Serial.println("Connected to server! Printing buf...");
-    client.println("Hi there!");
+    Serial.println("Connected to server! Printing data_str...");
     client.println(data_str);
-//    client.println(buf);
-//    Serial.println(buf);
-//    for(int i = 0; i < 5; i++){
-//      client.println(String(i));
-//      client.println(buf);
-//    }
   }
   else {
     Serial.println("Didn't connect to server...");
   }
-
-//  client.stop();
-//  delay(5000);
-//  client.stop();
-
-		//send_data()
-
-		// if longer-term storage-packet is nonempty
-			// send that
-			// clear storage
-		// prepare small packet with array as contents
-		// send packet across WiFi
-	// else
-		// store_data()
-
-		// store in a "longer-term" packet
-		// light up warning LED
-		// stop and setupWiFi() again?
-
-	// wait a certain amount of time depending on acquisition rate (?)
 
   #else //debug over Serial
   Serial.println(data_str);
@@ -241,16 +250,6 @@ void loop()
 
 
 
-
-
-//// to make SimplesimpleTimer.simpleTimer.setsimpleTimer happy
-//// (try to fix code to not need this?)
-//void add_ecg_data_wrapper(){
-//  readings.add_ecg_data();
-//}
-//void add_po_data_wrapper(){
-//  readings.add_pulse_ox_data();
-//}
 
 
 // ping the ECG pins and pulse-ox pins alternately for ECG and pulse-ox measurements
@@ -287,62 +286,9 @@ void update_continuous_readings(time_t interval){
 
 
 
-
-// std not in Arduino libraries... 
-//
-//  ExampleFunction f1 = std::bind(Data::add_ecg_data, &readings, std::placeholders::_1);
-//  ExampleFunction f2 = std::bind(Data::add_pulse_ox_data, &readings, std::placeholders::_1);
-//  int ecg_timeId = simpleTimer.setsimpleTimer(TIME_ECG, f1, LENGTH_ECG);
-//
-//  int po_timeId = simpleTimer.setsimpleTimer(TIME_PO, f2, LENGTH_PO);
-//
-  
-//  Serial.println("Before ecg_timeId...");
-//  
-//  int ecg_timeId = simpleTimer.setTimer(TIME_ECG, add_ecg_data_wrapper, LENGTH_ECG);
-//
-//  Serial.println("Before po_timeId...");
-//  //'/2' because two readings per call
-//  int po_timeId = simpleTimer.setTimer(TIME_PO, add_po_data_wrapper, LENGTH_PO/2); 
-
-
-//  ctrType i = 0; //ecg counter
-//  ctrType j = 0; //po counter
-//  ctrType j_max = LENGTH_PO;
-//  unsigned long t = millis();
-//
-//
-//
-//  // polling time elapsed with millis() will slow down acquisition ...
-//  // TODO: test how fast hardware can be polled? Then can use i to determine when to switch
-//
-//  while(j < j_max) // stop after filling up pulse_ox array
-//  {
-//    
-//    while(((millis() - t) < TIME_PO) && (i < LENGTH_ECG)){
-//
-//
-//    }
-//    // if here, either time elapsed or reached end of buffer
-//    // return if end of buffer
-//    if(i >= LENGTH_ECG) { break; }
-//
-//    //first, add to pulse_ox reading array
-//    add_pulse_ox_data(j);
-//    j+=2; //'2' because two readings added to pulse-ox (see documentation for add_pulse_ox_data
-//    // update interval
-//    t = millis();
-//    
-//
-//    
-//  }
-//
-//  // update lengths
-//  *len_ecg = i;
-//  *len_po = j;
-//
-//  return;
 }
+
+
 
 
 // Waits until a serial connection is established (via native USB port)

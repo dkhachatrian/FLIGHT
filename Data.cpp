@@ -1,3 +1,5 @@
+#include <ArduinoJson.h> //for packaging data
+
 // class Data implementation
 
 #include "Data.h"
@@ -90,27 +92,11 @@ bool Data::add_pulse_ox_data(){
 
   vals_po[len_po] = percentO2;
   vals_po[len_po+1] = v_ir; //just to see how low the numbers are
-  Serial.println(String(percentO2));
+//  Serial.println(String(percentO2));
   #endif
   
   len_po += 2; //update length of array
   return true;
-
-  
-
-//  // poll the two different pins in the order 'RED' and 'IR'
-//  vals_po[len_po] = analogRead(PIN_PULSEOX_RED);
-//  vals_po[len_po + 1] = analogRead(PIN_PULSEOX_IR);
-//  vals_po += 2;
-//
-//  
-//  digitalWrite(PIN_PULSEOX_RED_SWITCH, HIGH); //LED now shooting at red range
-//  vals_po[len_po] = analogRead(PIN_PULSEOX);
-//  digitalWrite(PIN_PULSEOX_RED_SWITCH, LOW); //LED now shooting at IR range
-//  vals_po[len_po + 1] = analogRead(PIN_PULSEOX);
-//  len_po += 2;
-//  return true;
-//
 
 
 
@@ -152,34 +138,75 @@ void Data::update_temp() {
 // to be sent over SSL
 // t = timestamp for the packet
 String Data::package_data(time_t t){
-  String s = "";
-  int i = 0;
 
-  // "pretty" code for string formatting not trivial...
-  // (would require a bunch of extra code/function calls)
-  // so a 'dumb' way is used
+  // using ArduinoJSON
+  // with dynamicJSONBuffer suggested to have ~5000 bytes
+  // resource: https://github.com/bblanchon/ArduinoJson/wiki/Encoding%20JSON
 
-  s = LABEL_TIME + String(t) + DELIMITER + LABEL_ECG;
-
-  //s = label_1 + delimiter; ...
-
-  // churn together ecg data
-  for(i = 0; i < len_ecg; i++)
-  {
-    s += (String(vals_ecg[i]) + DELIMITER);
-  }
-
-  s += LABEL_PO;
-
-  for(i = 0; i < len_po; i++)
-  {
-    s += (String(vals_po[i]) + DELIMITER);
-  }
-
-  s += LABEL_TEMP + String(val_temp) + LABEL_END_OF_PACKET;
-
-  return s;
+  //
+  // Step 1: Reserve memory space
+  //
+  DynamicJsonBuffer jsonBuffer(5000); //suggests it starts with 5000 bytes from the heap
   
+  //
+  // Step 2: Build object tree in memory
+  //
+  JsonObject& root = jsonBuffer.createObject();
+  root[LABEL_TIME] = t;
+  root[LABEL_TEMP] = val_temp;
+
+  int i = 0;
+  // pulse-ox
+  JsonArray& po = root.createNestedArray(LABEL_PO);
+  for(i = 0; i < len_po; i++)
+    po.add(vals_po[i]);
+    
+  // ecg
+  JsonArray& ecg = root.createNestedArray(LABEL_ECG);
+  for(i = 0; i < len_ecg; i++)
+    ecg.add(vals_ecg[i]);
+  
+  
+  //
+  // Step 3: Generate the JSON string
+  //
+//  root.printTo(Serial); // to be done when sending to server
+  String result;
+  root.printTo(result);
+  return result;
+
+
+
+
+  
+//  String s = "";
+//  int i = 0;
+//
+//  // "pretty" code for string formatting not trivial...
+//  // (would require a bunch of extra code/function calls)
+//  // so a 'dumb' way is used
+//
+//  s = LABEL_TIME + String(t) + DELIMITER + LABEL_ECG;
+//
+//  //s = label_1 + delimiter; ...
+//
+//  // churn together ecg data
+//  for(i = 0; i < len_ecg; i++)
+//  {
+//    s += (String(vals_ecg[i]) + DELIMITER);
+//  }
+//
+//  s += LABEL_PO;
+//
+//  for(i = 0; i < len_po; i++)
+//  {
+//    s += (String(vals_po[i]) + DELIMITER);
+//  }
+//
+//  s += LABEL_TEMP + String(val_temp) + LABEL_END_OF_PACKET;
+//
+//  return s;
+//  
 }
 
 

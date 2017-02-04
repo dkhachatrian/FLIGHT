@@ -63,8 +63,7 @@ IPAddress subnet(255, 255, 255, 0);
 //IPAddress server(127,0,0,1);
 //int port = 80;
 
-IPAddress server(192,168,1,1);
-int port = 80;
+
 
 
 

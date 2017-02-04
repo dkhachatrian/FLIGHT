@@ -5,6 +5,10 @@
 
 // macros //
 
+
+
+// Pins
+
 #define RESOLUTION_ADC 12 //12-bit ADC
 
 #define PIN_THERMISTOR A0
@@ -76,7 +80,7 @@ const String LABEL_TIME = "TIMESTAMP:";
 const String LABEL_ECG = "ECG:";
 const String LABEL_PO = "PO:";
 const String LABEL_TEMP = "TEMP:";
-const String LABEL_END_OF_PACKET = "";
+const String LABEL_END_OF_PACKET = "\n";
 
 
 
