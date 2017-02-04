@@ -34,7 +34,8 @@
 //
 // NEW: to match with Integrated Circuit division, will collect 250 samples / second
 // --> 1000 / sizeof(int) = 250 points every TIME_CTS ms.
-const unsigned MAX_LENGTH = 1000; 
+const unsigned MAX_LENGTH = 1000;
+const unsigned MAX_JSON_SIZE = 10000;
 
 
 const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation

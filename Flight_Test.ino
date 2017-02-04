@@ -1,5 +1,6 @@
-#include <ArduinoJson.h>
 
+#include <ArduinoJson.h>
+#include <WiFi101.h>
 // toggles (mainly for tests)
 
 
@@ -11,6 +12,8 @@
 // For debugging only (performing this on the microcontroller
 // will slow things down)
 #define PERFORM_CALCULATIONS
+
+
 
 
 
@@ -29,14 +32,25 @@
 //#define BAREBONES
 
 
+// if we have to go to the backup plan of going between
+// microcontrollers, shouldn't do the whole HTTP headers thing
+// so separate toggle
+//#define USING_MC_SERVER
+
+
 // seems like we're using Firebase as our server now?
 // so have that toggle for now
-#define USING_FIREBASE
+//#define USING_FIREBASE
+
+// OK so now we're using PubNub again?
+#define USING_PUBNUB
 
 
 
 
 
+// use hardcoded parameters for connections to WiFi, servers, etc.
+#define USE_HARDCODED_CONNECTIONS
 
 
 
@@ -59,6 +73,10 @@
 //#include <Event.h>
 //#include <Timer.h> // from http://playground.arduino.cc/Code/Timer
 
+#ifdef USING_PUBNUB
+#define PubNub_BASE_CLIENT WiFiClient
+#include <PubNub.h>
+#endif
 
 
 #ifdef DUMMY_SENSORS
@@ -83,7 +101,6 @@ binType generate_num(){
 
 //WiFiUDP Udp;
 //WiFiSSLClient client; // SSL handles encryption for us!
-WiFiClient client; // testing with 127.0.0.1
 
 //SimpleTimer simpleTimer; // for ECG/pulse-ox timing
 
@@ -97,6 +114,17 @@ char server[MAX_INPUT_LENGTH];
 String auth_code;
 int port;
 
+#ifdef USING_PUBNUB
+char pub_key[MAX_INPUT_LENGTH];
+char sub_key[MAX_INPUT_LENGTH];
+char channel[MAX_INPUT_LENGTH];
+
+//#define PubNub_BASE_CLIENT WiFiClient
+//Pubnub_BASE_CLIENT *client;
+PubNub_BASE_CLIENT *client;
+#else
+WiFiClient client; // testing with 127.0.0.1
+#endif
 
 
 void setup()
@@ -116,11 +144,61 @@ void setup()
 	WiFi.setPins(8, 7, 4, 2);
 	setup_WiFi();
   #endif
+  
+  #ifndef USING_PUBNUB
   setup_server();
+  #else
+  setup_pubnub();
+  #endif
 
 }
 
+// 
+void setup_pubnub()
+{
+  #ifdef USE_HARDCODED_CONNECTIONS
+  String("blah_the_dah").toCharArray(pub_key, MAX_INPUT_LENGTH);
+  String("scoobadeedoo").toCharArray(sub_key, MAX_INPUT_LENGTH);
+  String("smooooooth_operatoooooor").toCharArray(channel, MAX_INPUT_LENGTH);
 
+//  pub_key = (char*) "blah_the_dah";
+//  sub_key = (char*) "scoobadeedoo";
+//  channel = (char*) "smooooooth_operatoooooor";
+  #endif
+
+  while (true)
+  {
+    #ifndef USE_HARDCODED_CONNECTIONS
+
+    // get pub_key
+    Serial.print("Please provide the pub_key for your PubNub site, then press Enter or Return:\n");
+    Serial.readBytesUntil('\n', pub_key, MAX_INPUT_LENGTH);
+    // get sub_key
+    Serial.print("Please input the sub_key for your PubNub site, then press Enter.\n"
+    Serial.readBytesUntil('\n', sub_key, MAX_INPUT_LENGTH);
+    // get channel
+    Serial.print("Please input the channel for your PubNub site, then press Enter.\n"
+    Serial.print("(Note: will not be able to test this until readings are being sent, so input carefully):\n");
+    Serial.readBytesUntil('\n', channel, MAX_INPUT_LENGTH);
+    #endif
+
+
+    // attempt connection
+
+    if(PubNub.begin(pub_key, sub_key))
+    {
+      break;
+    }
+    else
+    {
+      Serial.println("Could not connect to PubNub... Double-check your pubkey, subkey, and channel.");
+    }
+  }
+}
+
+
+
+#ifndef USING_PUBNUB
 // get info for server to connect to
 void setup_server()
 {
@@ -131,7 +209,7 @@ void setup_server()
 
   //get server info
 
-  #ifndef DUMMY_SENSORS
+  #ifndef USE_HARDCODED_CONNECTIONS
   char server[MAX_INPUT_LENGTH]; //  your network SSID (name)
   char auth_code[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
   char port_str[10];
@@ -147,7 +225,7 @@ void setup_server()
 
   while (true)
   {
-    #ifndef DUMMY_SENSORS
+    #ifndef USE_HARDCODED_CONNECTIONS
 
     // get server name
     Serial.print("Please provide the name of the server to connect to, then press Enter or Return:\n");
@@ -160,7 +238,7 @@ void setup_server()
     while(port == 0)
     {
       Serial.print("Please input the port the server will be listening on, then press Enter");
-      Serial.print(" (hint: standard HTTP port is 80 and standard HTTPS port is 443":\n");
+      Serial.print(" (hint: standard HTTP port is 80 and standard HTTPS port is 443:\n");
       Serial.readBytesUntil('\n', port_str, MAX_INPUT_LENGTH);
       port = atoi(port_str); //if atoi fails, returns 0
     }
@@ -192,7 +270,7 @@ void setup_server()
      }
   }
 }
-
+#endif
 
 void loop()
 {
@@ -217,13 +295,33 @@ void loop()
   // in the meantime
   // TODO: utilize dead time here...
 
-
+  #ifdef USING_PUBNUB
+  String s = readings.package_data(t);
+  char data_str[MAX_JSON_SIZE];
+  s.toCharArray(data_str, MAX_JSON_SIZE);
+  #else
   String data_str = readings.package_data(t);
+  #endif
 
   #ifdef USING_WIFI
 
   Serial.println(data_str);
-  
+
+
+  #ifdef USING_PUBNUB
+   
+
+  client = PubNub.publish(channel, data_str);
+
+  if (!client) {
+    Serial.println("Error while publishing to PubNub... Check channel and pubkey?");
+//    return;
+  }
+  else
+  {
+    client->stop();
+  }
+  #else
   // close any connection before send a new request.
   // This will free the socket on the WiFi shield
   client.stop();
@@ -231,24 +329,41 @@ void loop()
   
   // if there's a successful connection:
   if (client.connect(server, port)) {
+    #ifdef USING_MC_SERVER
     Serial.println("Connected to server! Printing data_str...");
     client.println(data_str);
+    #endif
+
+    #ifdef USING_FIREBASE
+    // setup http PUT request
+    Serial.println("Connected to server! Sending PUT request...");
+    put_request(data_str); // TODO: probably will need to extend with database resource?
+    #endif
   }
   else {
     Serial.println("Didn't connect to server...");
   }
-
+  #endif
   #else //debug over Serial
   Serial.println(data_str);
 //  delay(1000); //give time to notice different line
   #endif
 
+  
   readings.forget();
 
   #endif
+
+  
 }
 
-
+// if connected to a server,
+// sends a PUT request for the data json
+// to be placed in resource/directory store
+void put_request(String json, String store)
+{
+  
+}
 
 
 
