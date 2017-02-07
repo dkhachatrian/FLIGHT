@@ -35,7 +35,7 @@
 // NEW: to match with Integrated Circuit division, will collect 250 samples / second
 // --> 1000 / sizeof(int) = 250 points every TIME_CTS ms.
 const unsigned MAX_LENGTH = 1000;
-const unsigned MAX_JSON_SIZE = 10000;
+//const unsigned MAX_JSON_SIZE = 1000;
 
 
 const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
@@ -58,6 +58,9 @@ const sizeType LENGTH_ECG = sizeType(MAX_LENGTH/sizeof(binType));
 const time_t TIME_ECG = time_t(LENGTH_ECG / TIME_CTS);
 
 
+const int BUFFER_SIZE = JSON_OBJECT_SIZE(6) + JSON_ARRAY_SIZE(LENGTH_PO) + JSON_ARRAY_SIZE(LENGTH_ECG);
+
+
 
 const unsigned MAX_INPUT_LENGTH = 255;
 
@@ -77,10 +80,10 @@ const unsigned BAUD_RATE = 9600; //bits-per-second
 //// String Labels and Delimiters
 
 const char DELIMITER = ',';
-const String LABEL_TIME = "TIMESTAMP:";
-const String LABEL_ECG = "ECG:";
-const String LABEL_PO = "PO:";
-const String LABEL_TEMP = "TEMP:";
+const String LABEL_TIME = "TIMESTAMP";
+const String LABEL_ECG = "ECG";
+const String LABEL_PO = "PO";
+const String LABEL_TEMP = "TEMP";
 const String LABEL_END_OF_PACKET = "\n";
 
 

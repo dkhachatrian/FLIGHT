@@ -146,7 +146,7 @@ String Data::package_data(time_t t){
   //
   // Step 1: Reserve memory space
   //
-  StaticJsonBuffer<MAX_JSON_SIZE> jsonBuffer; //suggests it starts with 5000 bytes from the heap
+  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer; //suggests it starts with 5000 bytes from the heap
   
   //
   // Step 2: Build object tree in memory
@@ -166,7 +166,7 @@ String Data::package_data(time_t t){
   for(i = 0; i < len_ecg; i++)
     ecg.add(vals_ecg[i]);
   
-  
+//  return root;
   //
   // Step 3: Generate the JSON string
   //

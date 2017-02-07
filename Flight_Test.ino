@@ -4,14 +4,13 @@
 // toggles (mainly for tests)
 
 
-
 // leave uncommented to have microcontroller directly calculate
 // relevant physiological data from the voltage readings
 // (instead of having a separate recipient do this)
 //
 // For debugging only (performing this on the microcontroller
 // will slow things down)
-#define PERFORM_CALCULATIONS
+//#define PERFORM_CALCULATIONS
 
 
 
@@ -121,7 +120,7 @@ char channel[MAX_INPUT_LENGTH];
 
 //#define PubNub_BASE_CLIENT WiFiClient
 //Pubnub_BASE_CLIENT *client;
-PubNub_BASE_CLIENT *client;
+//PubNub_BASE_CLIENT *client;
 #else
 WiFiClient client; // testing with 127.0.0.1
 #endif
@@ -138,6 +137,7 @@ void setup()
   //use all bits of ADC (not default of 10)
   analogReadResolution(RESOLUTION_ADC);
 
+//  return; //jump to loop . For testing
 
   #ifdef USING_WIFI
 	//Configure pins for Adafruit ATWINC1500 Feather
@@ -157,9 +157,9 @@ void setup()
 void setup_pubnub()
 {
   #ifdef USE_HARDCODED_CONNECTIONS
-  String("blah_the_dah").toCharArray(pub_key, MAX_INPUT_LENGTH);
-  String("scoobadeedoo").toCharArray(sub_key, MAX_INPUT_LENGTH);
-  String("smooooooth_operatoooooor").toCharArray(channel, MAX_INPUT_LENGTH);
+  String("pub-c-841e63e7-113a-4975-b7cc-10e0dfb6f8cd").toCharArray(pub_key, MAX_INPUT_LENGTH);
+  String("sub-c-8c95738c-df6b-11e6-802a-02ee2ddab7fe").toCharArray(sub_key, MAX_INPUT_LENGTH);
+  String("demo_tutorial").toCharArray(channel, MAX_INPUT_LENGTH);
 
 //  pub_key = (char*) "blah_the_dah";
 //  sub_key = (char*) "scoobadeedoo";
@@ -183,16 +183,27 @@ void setup_pubnub()
     #endif
 
 
-    // attempt connection
 
-    if(PubNub.begin(pub_key, sub_key))
-    {
-      break;
-    }
-    else
-    {
-      Serial.println("Could not connect to PubNub... Double-check your pubkey, subkey, and channel.");
-    }
+    PubNub.begin(pub_key, sub_key);
+    break;
+
+//    // attempt connection
+//
+//    bool connected = PubNub.begin(pub_key, sub_key);
+//    delay(3000); //necessary?
+//  
+//    if(connected)
+//    {
+//      break;
+//    }
+//    else
+//    {
+//      Serial.println("Could not connect to PubNub... Double-check your pubkey, subkey, and channel.");
+//      Serial.println("pubkey: "+ String(pub_key));
+//      Serial.println("subkey: "+ String(sub_key));
+//      Serial.println("channel: "+ String(channel));
+//      delay(1000); //testing...
+//    }
   }
 }
 
@@ -285,9 +296,9 @@ void loop()
 
 
   // collect data
-  Serial.println("Before update_temp");
+//  Serial.println("Before update_temp");
   readings.update_temp();
-  Serial.println("Before update_continuous_readings");
+//  Serial.println("Before update_continuous_readings");
   update_continuous_readings(TIME_CTS);
 
   // wait until simpleTimers are finished before running
@@ -296,24 +307,43 @@ void loop()
   // TODO: utilize dead time here...
 
   #ifdef USING_PUBNUB
+//  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer; //suggests it starts with 5000 bytes from the heap
+//  JsonObject& root = jsonBuffer.createObject();
+
+
+  
   String s = readings.package_data(t);
-  char data_str[MAX_JSON_SIZE];
-  s.toCharArray(data_str, MAX_JSON_SIZE);
+  char data_str[2000];
+  s.toCharArray(data_str, 2000);
+//  JsonObject* data = readings.package_data(t);
   #else
   String data_str = readings.package_data(t);
   #endif
 
-  #ifdef USING_WIFI
-
+  Serial.println(s.length());
   Serial.println(data_str);
+//  char test_str[] = "\"lets foo the bar\"";
+  char test_str[] = "{\"rlysw\":{\"1\":0},\"rlysx\":[34,343,545345,35345]}";
+  char buf[100];
+  String(test_str).toCharArray(buf, 100);
+  Serial.println(test_str);
+  Serial.println(buf);
+
+  #ifdef USING_WIFI
 
 
   #ifdef USING_PUBNUB
    
+  WiFiClient *client = PubNub.publish(channel, data_str);
+//  WiFiClient *client = PubNub.publish(channel, test_str);
+//  WiFiClient *client = PubNub.publish(channel, buf);
 
-  client = PubNub.publish(channel, data_str);
+//  WiFiClient *client = PubNub.publish(channel, s);
+//  char msg[] = "\"Hello world from Arduino for Adafruit Feather M0 WINC1500\"";
+//  WiFiClient *client = PubNub.publish(channel, msg);
 
-  if (!client) {
+  if (!client)
+  {
     Serial.println("Error while publishing to PubNub... Check channel and pubkey?");
 //    return;
   }
@@ -424,7 +454,7 @@ void setup_WiFi()
 	char pass[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
   #else
   // test network, set up by other microcontroller
-  char ssid[] = "wifi101-network";
+  char ssid[] = "UCLA_WEB";
   char pass[] = "1234567890";
   #endif
 
@@ -454,7 +484,7 @@ void setup_WiFi()
 
 //		wifi_status = WiFi.begin(ssid, pass); //for encrypted networks 
     wifi_status = WiFi.begin(ssid); //for non-encrypted networks
-    delay(10000); //give time to connect (necessary?)
+//    delay(10000); //give time to connect (necessary?)
 
 		// tell user if it couldn't connect
 		if (wifi_status != WL_CONNECTED)

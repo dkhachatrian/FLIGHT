@@ -8,9 +8,9 @@
 //
 // For debugging only (performing this on the microcontroller
 // will slow things down)
-#define PERFORM_CALCULATIONS
+//#define PERFORM_CALCULATIONS
 
-
+//class JsonObject;
 
 
 
