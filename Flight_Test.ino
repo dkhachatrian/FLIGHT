@@ -125,6 +125,8 @@ char channel[MAX_INPUT_LENGTH];
 WiFiClient client; // testing with 127.0.0.1
 #endif
 
+char data_str[2000];
+
 
 void setup()
 {
@@ -313,34 +315,19 @@ void loop()
 
   
   String s = readings.package_data(t);
-  char data_str[2000];
   s.toCharArray(data_str, 2000);
 //  JsonObject* data = readings.package_data(t);
   #else
   String data_str = readings.package_data(t);
   #endif
 
-  Serial.println(s.length());
   Serial.println(data_str);
-//  char test_str[] = "\"lets foo the bar\"";
-  char test_str[] = "{\"rlysw\":{\"1\":0},\"rlysx\":[34,343,545345,35345]}";
-  char buf[100];
-  String(test_str).toCharArray(buf, 100);
-  Serial.println(test_str);
-  Serial.println(buf);
-
   #ifdef USING_WIFI
 
 
   #ifdef USING_PUBNUB
    
   WiFiClient *client = PubNub.publish(channel, data_str);
-//  WiFiClient *client = PubNub.publish(channel, test_str);
-//  WiFiClient *client = PubNub.publish(channel, buf);
-
-//  WiFiClient *client = PubNub.publish(channel, s);
-//  char msg[] = "\"Hello world from Arduino for Adafruit Feather M0 WINC1500\"";
-//  WiFiClient *client = PubNub.publish(channel, msg);
 
   if (!client)
   {
@@ -387,13 +374,6 @@ void loop()
   
 }
 
-// if connected to a server,
-// sends a PUT request for the data json
-// to be placed in resource/directory store
-void put_request(String json, String store)
-{
-  
-}
 
 
 
@@ -449,7 +429,7 @@ void setup_WiFi()
 
 	// get wifi info
 
-  #ifndef DUMMY_SENSORS
+  #ifndef USE_HARDCODED_CONNECTIONS
 	char ssid[MAX_INPUT_LENGTH]; //  your network SSID (name)
 	char pass[MAX_INPUT_LENGTH]; // your network password (use for WPA, or use as key for WEP)
   #else
@@ -469,7 +449,7 @@ void setup_WiFi()
 
 	while (wifi_status != WL_CONNECTED)
 	{
-    #ifndef DUMMY_SENSORS
+    #ifndef USE_HARDCODED_CONNECTIONS
 
 		// get SSID
 		Serial.print("Please provide the SSID (name of WiFi network) to connect to, then press Enter or Return:\n");
