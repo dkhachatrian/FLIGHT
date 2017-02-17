@@ -13,6 +13,10 @@
 //#define PERFORM_CALCULATIONS
 
 
+// if defined, will not print to Serial monitor when in main loop
+// MUST BE DEFINED TO BE USED PORTABLY
+#define PORTABLE
+
 
 
 
@@ -125,7 +129,7 @@ char channel[MAX_INPUT_LENGTH];
 WiFiClient client; // testing with 127.0.0.1
 #endif
 
-char data_str[2000];
+char data_str[2000]; //space for JSON string
 
 
 void setup()
@@ -288,7 +292,9 @@ void setup_server()
 void loop()
 {
   #ifdef BAREBONES
+  #ifndef PORTABLE
   Serial.println("Hi I'm in loop");
+  #endif
   #else
   
 	// prepare packet
@@ -321,7 +327,10 @@ void loop()
   String data_str = readings.package_data(t);
   #endif
 
+
+  #ifndef PORTABLE
   Serial.println(data_str);
+  #endif
   #ifdef USING_WIFI
 
 
@@ -331,7 +340,9 @@ void loop()
 
   if (!client)
   {
+    #ifndef PORTABLE
     Serial.println("Error while publishing to PubNub... Check channel and pubkey?");
+    #endif
 //    return;
   }
   else
@@ -347,22 +358,30 @@ void loop()
   // if there's a successful connection:
   if (client.connect(server, port)) {
     #ifdef USING_MC_SERVER
+    #ifndef PORTABLE
     Serial.println("Connected to server! Printing data_str...");
+    #endif
     client.println(data_str);
     #endif
 
     #ifdef USING_FIREBASE
     // setup http PUT request
+    #ifndef PORTABLE
     Serial.println("Connected to server! Sending PUT request...");
+    #endif
     put_request(data_str); // TODO: probably will need to extend with database resource?
     #endif
   }
   else {
+    #ifndef PORTABLE
     Serial.println("Didn't connect to server...");
+    #endif
   }
   #endif
   #else //debug over Serial
+  #ifndef PORTABLE
   Serial.println(data_str);
+  #endif
 //  delay(1000); //give time to notice different line
   #endif
 
@@ -402,8 +421,9 @@ void update_continuous_readings(time_t interval){
     }
   }
 
+  #ifndef PORTABLE
   Serial.println("Exiting update_continuous_readings.");
-
+  #endif
 
   // prepared simpleTimer for loop()
 
@@ -453,10 +473,10 @@ void setup_WiFi()
 
 		// get SSID
 		Serial.print("Please provide the SSID (name of WiFi network) to connect to, then press Enter or Return:\n");
-		Serial.readBytesUntil('\n', ssid, MAX_LENGTH);
+		Serial.readBytesUntil('\n', ssid, MAX_INPUT_LENGTH);
 		// get pass
 		Serial.print("Please input the password, then press Enter:\n");
-		Serial.readBytesUntil('\n', pass, MAX_LENGTH);
+		Serial.readBytesUntil('\n', pass, MAX_INPUT_LENGTH);
     #endif
 
 

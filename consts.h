@@ -41,7 +41,8 @@ const unsigned MAX_LENGTH = 1000;
 const int WiFi_pins[4] = { 8, 7, 4, 2 }; // as per documentation
 
 //number of milliseconds to collect "continuous" data at a time
-const time_t TIME_CTS = 1000;
+//const time_t TIME_CTS = 1000;
+const time_t TIME_CTS = 5000;
 
 //number of milliseconds to wait between check pulse ox data
 //assuming max heart rate of ~200 bpm =~ 3 Hz, doubling frequency and then some to go to 8 Hz (to avoid aliasing),
