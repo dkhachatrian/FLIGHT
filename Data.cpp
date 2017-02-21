@@ -57,8 +57,9 @@ bool Data::add_pulse_ox_data(){
 
   #ifdef DUMMY_SENSORS
   vals_po[len_po] = generate_num();
-  vals_po[len_po+1] = generate_num();
-  len_po += 2;
+//  vals_po[len_po+1] = generate_num();
+//  len_po += 2;
+  len_po += 1;
   return true;
   #endif
 
@@ -66,7 +67,8 @@ bool Data::add_pulse_ox_data(){
   digitalWrite(PIN_PULSEOX_LED_RED, HIGH); //only red LED is on
   //delay(1); //necessary?
   #ifndef PERFORM_CALCULATIONS
-    vals_po[len_po] = analogRead(PIN_PULSEOX_PHOTODIODE);
+//    vals_po[len_po] = analogRead(PIN_PULSEOX_PHOTODIODE);
+    numType v_red = analogRead(PIN_PULSEOX_PHOTODIODE);
   #else
     float v_red = analogRead(PIN_PULSEOX_PHOTODIODE);
   #endif
@@ -76,7 +78,8 @@ bool Data::add_pulse_ox_data(){
   digitalWrite(PIN_PULSEOX_LED_IR, HIGH); // now only IR LED is on
   //delay(1); //necessary?
   #ifndef PERFORM_CALCULATIONS
-    vals_po[len_po + 1] = analogRead(PIN_PULSEOX_PHOTODIODE);
+//    vals_po[len_po + 1] = analogRead(PIN_PULSEOX_PHOTODIODE);
+    numType v_ir = analogRead(PIN_PULSEOX_PHOTODIODE);
   #else
     float v_ir = analogRead(PIN_PULSEOX_PHOTODIODE);
   #endif
@@ -85,17 +88,20 @@ bool Data::add_pulse_ox_data(){
   digitalWrite(PIN_PULSEOX_LED_IR, LOW); //turn off LEDs
 
   #ifdef PERFORM_CALCULATIONS
-  float ratio = v_red / v_ir;
-  float percentO2 = 0;
-  for(int i = 0; i < 3; i++)
-    percentO2 += (PO_COEFFS[i] * pow(ratio, i));
-
-  vals_po[len_po] = percentO2;
-  vals_po[len_po+1] = v_ir; //just to see how low the numbers are
-//  Serial.println(String(percentO2));
-  #endif
+    float ratio = v_red / v_ir;
+    float percentO2 = 0;
+    for(int i = 0; i < 3; i++)
+      percentO2 += (PO_COEFFS[i] * pow(ratio, i));
   
-  len_po += 2; //update length of array
+    vals_po[len_po] = percentO2;
+    vals_po[len_po+1] = v_ir; //just to see how low the numbers are
+  //  Serial.println(String(percentO2));
+    len_po+=2;
+  #else
+  //  len_po += 2; //update length of array
+    vals_po[len_po] = v_red / v_ir;
+    len_po++;
+  #endif
   return true;
 
 

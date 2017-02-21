@@ -13,6 +13,8 @@ typedef int ctrType;
 
 typedef size_t sizeType;
 
+typedef float numType;
+
 //the output type of the encryption algorithm used
 // (to create appropriate type of array)
 typedef unsigned long encrType; 

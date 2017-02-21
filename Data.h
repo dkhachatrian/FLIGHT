@@ -37,7 +37,8 @@ public:
   String package_data(time_t t);
 //private:
   binType vals_ecg[LENGTH_ECG]; //ecg bin numbers
-  binType vals_po[size_t(LENGTH_PO)]; // polled less often than ECG circuit
+//  binType vals_po[size_t(LENGTH_PO)]; // polled less often than ECG circuit
+  numType vals_po[size_t(LENGTH_PO)]; // now we just send ratios, sent of type numType
   binType val_temp; //temperature reading
   sizeType len_ecg;
   sizeType len_po;

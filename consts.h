@@ -50,7 +50,8 @@ const time_t TIME_CTS = 5000;
 const time_t TIME_PO = 125;
 
 
-const sizeType LENGTH_PO = sizeType (2 * TIME_CTS/TIME_PO); //'2' because two values needed each reading (red and IR(???))
+//const sizeType LENGTH_PO = sizeType (2 * TIME_CTS/TIME_PO); //'2' because two values needed each reading (red and IR(???))
+const sizeType LENGTH_PO = sizeType (TIME_CTS/TIME_PO); // now we just send the ratios
 const sizeType LENGTH_ECG = sizeType(MAX_LENGTH/sizeof(binType));
 
 //try to poll ECG at equal time intervals to fill up the ECG buffer up to LENGTH_ECG
