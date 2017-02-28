@@ -161,11 +161,13 @@ String Data::package_data(time_t t){
   root[LABEL_TIME] = t;
   root[LABEL_TEMP] = val_temp;
 
-  int i = 0;
-  // pulse-ox
-  JsonArray& po = root.createNestedArray(LABEL_PO);
-  for(i = 0; i < len_po; i++)
-    po.add(vals_po[i]);
+  root[LABEL_PO] = vals_po[0];
+//
+//  int i = 0;
+//  // pulse-ox
+//  JsonArray& po = root.createNestedArray(LABEL_PO);
+//  for(i = 0; i < len_po; i++)
+//    po.add(vals_po[i]);
     
   // ecg
   JsonArray& ecg = root.createNestedArray(LABEL_ECG);

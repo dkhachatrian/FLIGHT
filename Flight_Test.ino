@@ -1,3 +1,4 @@
+// Hello Audience!
 
 #include <ArduinoJson.h>
 #include <WiFi101.h>
@@ -134,10 +135,11 @@ char data_str[2000]; //space for JSON string
 
 void setup()
 {
+  
   Serial.begin(9600); 
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
-  }
+//  while (!Serial) {
+//    ; // wait for serial port to connect. Needed for Leonardo only
+//  }
 
   Serial.println("Entered setup.");
   //use all bits of ADC (not default of 10)
@@ -337,6 +339,9 @@ void loop()
   #ifdef USING_PUBNUB
    
   WiFiClient *client = PubNub.publish(channel, data_str);
+
+  // remove after collecting timestamp data...
+//  Serial.println(t);
 
   if (!client)
   {
