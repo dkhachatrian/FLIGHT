@@ -135,13 +135,15 @@ char data_str[2000]; //space for JSON string
 
 void setup()
 {
-  
+  #ifndef PORTABLE
   Serial.begin(9600); 
 //  while (!Serial) {
 //    ; // wait for serial port to connect. Needed for Leonardo only
 //  }
 
   Serial.println("Entered setup.");
+  #endif
+  
   //use all bits of ADC (not default of 10)
   analogReadResolution(RESOLUTION_ADC);
 
