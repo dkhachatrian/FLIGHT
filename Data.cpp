@@ -171,7 +171,7 @@ String Data::package_data(time_t t){
     
   // ecg
   JsonArray& ecg = root.createNestedArray(LABEL_ECG);
-  for(i = 0; i < len_ecg; i++)
+  for(int i = 0; i < len_ecg; i++)
     ecg.add(vals_ecg[i]);
 
   
