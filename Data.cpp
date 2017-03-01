@@ -53,7 +53,7 @@ bool Data::add_ecg_data(){
 // Returns false if there's not enough space
 bool Data::add_pulse_ox_data(){
 
-  if(len_po + 2 >= LENGTH_PO) return false;
+  if(len_po + 1 >= LENGTH_PO) return false;
 
   #ifdef DUMMY_SENSORS
   vals_po[len_po] = generate_num();
