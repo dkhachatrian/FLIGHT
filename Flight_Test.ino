@@ -23,9 +23,9 @@
 
 
 // if defined, generates numbers as fake sensor voltage readings
-// and uses built-in values for ssid and pass to
+// and uses built-ink values for ssid and pass to
 // quickly connect to wifi
-#define DUMMY_SENSORS
+//#define DUMMY_SENSORS
 
 // if defined, tries connecting with wifi
 // otherwise, testing values through serial
@@ -143,6 +143,12 @@ void setup()
 
   Serial.println("Entered setup.");
 //  #endif
+
+  // set up LEDs for output when given a digitalWrite
+  pinMode(PIN_PULSEOX_LED_RED, OUTPUT);
+  pinMode(PIN_PULSEOX_LED_IR, OUTPUT);
+
+
   
   //use all bits of ADC (not default of 10)
   analogReadResolution(RESOLUTION_ADC);

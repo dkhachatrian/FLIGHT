@@ -4,6 +4,8 @@
 
 #include "Data.h"
 
+#define PORTABLE
+
 
 Data::Data(){
   forget();
@@ -53,8 +55,11 @@ bool Data::add_ecg_data(){
 // Returns false if there's not enough space
 bool Data::add_pulse_ox_data(){
 
-  if(len_po + 1 >= LENGTH_PO) return false;
-
+//  if(len_po + 1 >= LENGTH_PO) return false;
+  #ifndef PORTABLE
+  Serial.println("Starting Data::add_pulse_ox_data.");
+  #endif
+  
   #ifdef DUMMY_SENSORS
   vals_po[len_po] = generate_num();
 //  vals_po[len_po+1] = generate_num();
@@ -102,6 +107,12 @@ bool Data::add_pulse_ox_data(){
     vals_po[len_po] = v_red / v_ir;
     len_po++;
   #endif
+
+  #ifndef PORTABLE
+  Serial.println("Exiting Data::add_pulse_ox_data.");
+  #endif
+
+  
   return true;
 
 
