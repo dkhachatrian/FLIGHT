@@ -135,14 +135,14 @@ char data_str[2000]; //space for JSON string
 
 void setup()
 {
-  #ifndef PORTABLE
+//  #ifndef PORTABLE
   Serial.begin(9600); 
 //  while (!Serial) {
 //    ; // wait for serial port to connect. Needed for Leonardo only
 //  }
 
   Serial.println("Entered setup.");
-  #endif
+//  #endif
   
   //use all bits of ADC (not default of 10)
   analogReadResolution(RESOLUTION_ADC);
@@ -223,10 +223,10 @@ void setup_pubnub()
 // get info for server to connect to
 void setup_server()
 {
-  
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+
+//  while (!Serial) {
+//    ; // wait for serial port to connect. Needed for native USB port only
+//  }
 
   //get server info
 
