@@ -57,7 +57,7 @@ const sizeType LENGTH_ECG = sizeType(MAX_LENGTH/sizeof(binType));
 //try to poll ECG at equal time intervals to fill up the ECG buffer up to LENGTH_ECG
 // by the time TIME_CTS has passed
 // so this describes interval between ECG polling
-const time_t TIME_ECG = time_t(LENGTH_ECG / TIME_CTS);
+const time_t TIME_ECG = time_t(TIME_CTS / LENGTH_ECG);
 
 
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(6) + JSON_ARRAY_SIZE(LENGTH_PO) + JSON_ARRAY_SIZE(LENGTH_ECG);
