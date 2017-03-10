@@ -19,6 +19,9 @@
 #define PORTABLE
 
 
+// if defined, suppress Serial output during WiFi setup
+// (still not fully implemented...)
+#define NO_WIFI_OUTPUT
 
 
 
@@ -173,9 +176,18 @@ void setup()
 void setup_pubnub()
 {
   #ifdef USE_HARDCODED_CONNECTIONS
+
+  // only have one set uncommented
+//  // Patient 1
+//  String("pub-c-841e63e7-113a-4975-b7cc-10e0dfb6f8cd").toCharArray(pub_key, MAX_INPUT_LENGTH);
+//  String("sub-c-8c95738c-df6b-11e6-802a-02ee2ddab7fe").toCharArray(sub_key, MAX_INPUT_LENGTH);
+//  String("demo_tutorial").toCharArray(channel, MAX_INPUT_LENGTH);
+
+  // Patient 2
   String("pub-c-841e63e7-113a-4975-b7cc-10e0dfb6f8cd").toCharArray(pub_key, MAX_INPUT_LENGTH);
   String("sub-c-8c95738c-df6b-11e6-802a-02ee2ddab7fe").toCharArray(sub_key, MAX_INPUT_LENGTH);
-  String("demo_tutorial").toCharArray(channel, MAX_INPUT_LENGTH);
+  String("demo_tutorial_1").toCharArray(channel, MAX_INPUT_LENGTH);
+
 
 //  pub_key = (char*) "blah_the_dah";
 //  sub_key = (char*) "scoobadeedoo";
@@ -454,11 +466,13 @@ void update_continuous_readings(time_t interval){
 // (Currently does not listen for any incoming packets.)
 void setup_WiFi()
 {
+  #ifndef NO_WIFI_OUTPUT
 	Serial.begin(BAUD_RATE); // sets bandwidth for serial connection
 
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for native USB port only
-	}
+//	while (!Serial) {
+//		; // wait for serial port to connect. Needed for native USB port only
+//	}
+  #endif
 
 	// get wifi info
 
@@ -475,9 +489,10 @@ void setup_WiFi()
 	printMacAddress();
 
 	// scan for existing networks:
+  #ifndef NO_WIFI_OUTPUT
 	Serial.println("Scanning available networks...");
 	listNetworks();
-
+  #endif
 
 
 	while (wifi_status != WL_CONNECTED)
