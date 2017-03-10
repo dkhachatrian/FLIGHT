@@ -172,7 +172,17 @@ String Data::package_data(time_t t){
   root[LABEL_TIME] = t;
   root[LABEL_TEMP] = val_temp;
 
-  root[LABEL_PO] = vals_po[0];
+//  root[LABEL_PO] = vals_po[0];
+  // take/transmit average of pulse-ox ratios
+  numType po_avg = 0;
+
+  for(int i = 0; i < len_po; i++)
+    po_avg += vals_po[i];
+
+  po_avg /= len_po;
+
+  root[LABEL_PO] = po_avg;
+  
 //
 //  int i = 0;
 //  // pulse-ox
